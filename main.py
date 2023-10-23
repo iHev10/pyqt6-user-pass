@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, \
     QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, \
-    QDialog, QVBoxLayout, QTextEdit, QToolBar
+    QDialog, QVBoxLayout, QTextEdit, QToolBar, QStatusBar
 from PyQt6.QtGui import QAction, QIcon
 import sys
 import sqlite3
@@ -40,6 +40,11 @@ class MainWindow(QMainWindow):
         toolbar.addAction(add_userpass_action)
         toolbar.addAction(search_action)
 
+        self.statusbar = QStatusBar()
+        self.setStatusBar(self.statusbar)
+
+        self.table.cellClicked.connect(self.cell_click)
+
     def load_data(self):
         connection = sqlite3.connect("database.db")
         result = connection.execute("SELECT * FROM userpass")
@@ -57,6 +62,28 @@ class MainWindow(QMainWindow):
     def search(self):
         dialog = SearchDialog()
         dialog.exec()
+
+    def cell_click(self):
+        edit_button = QPushButton("Edit")
+        edit_button.clicked.connect(self.edit)
+        delete_button = QPushButton("Delete")
+        delete_button.clicked.connect(self.delete)
+
+        children = self.findChildren(QPushButton)
+        if children:
+            for child in children:
+                self.statusbar.removeWidget(child)
+
+        self.statusbar.addWidget(edit_button)
+        self.statusbar.addWidget(delete_button)
+
+    def edit(self):
+        edit = EditDialog()
+        edit.exec()
+
+    def delete(self):
+        delete = DeleteDialog()
+        delete.exec()
 
 
 class InsertDialog(QDialog):
@@ -144,6 +171,14 @@ class SearchDialog(QDialog):
             connection.close()
         except:
             self.error_message.setText(f"'{title}' item does not exist!")
+
+
+class EditDialog(QDialog):
+    pass
+
+
+class DeleteDialog(QDialog):
+    pass
 
 
 app = QApplication(sys.argv)
