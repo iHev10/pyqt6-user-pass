@@ -1,3 +1,4 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, \
     QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, \
     QDialog, QVBoxLayout, QTextEdit
@@ -14,6 +15,7 @@ class MainWindow(QMainWindow):
 
         file_menu_item = self.menuBar().addMenu("&file")
         help_menu_item = self.menuBar().addMenu("&help")
+        edit_menu_item = self.menuBar().addMenu("&edit")
 
         add_userpass_action = QAction("Add a new user-pass", self)
         add_userpass_action.triggered.connect(self.insert)
@@ -21,6 +23,10 @@ class MainWindow(QMainWindow):
 
         about_action = QAction("About", self)
         help_menu_item.addAction(about_action)
+
+        search_action = QAction("Search", self)
+        search_action.triggered.connect(self.search)
+        edit_menu_item.addAction(search_action)
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
@@ -40,6 +46,10 @@ class MainWindow(QMainWindow):
 
     def insert(self):
         dialog = InsertDialog()
+        dialog.exec()
+
+    def search(self):
+        dialog = SearchDialog()
         dialog.exec()
 
 
@@ -82,12 +92,52 @@ class InsertDialog(QDialog):
         connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
         cursor.execute("INSERT INTO userpass (Title, Username, Password, Info) VALUES (?, ?, ?, ?)",
-                       (title, user, password, extra_info))
+                       (title.title(), user, password, extra_info))
         connection.commit()
         cursor.close()
         connection.close()
         user_pass_app.load_data()
         print(title, user, password, extra_info)
+
+
+class SearchDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Search items")
+        self.setFixedWidth(210)
+        self.setFixedHeight(110)
+
+        layout = QVBoxLayout()
+
+        self.title = QLineEdit()
+        self.title.setPlaceholderText("Title")
+        layout.addWidget(self.title)
+
+        search_button = QPushButton("Search")
+        search_button.clicked.connect(self.search)
+        layout.addWidget(search_button)
+
+        self.error_message = QLabel("")
+        layout.addWidget(self.error_message)
+
+        self.setLayout(layout)
+
+    def search(self):
+        try:
+            title = self.title.text()
+            connection = sqlite3.connect("database.db")
+            cursor = connection.cursor()
+            result = cursor.execute("SELECT * FROM userpass WHERE Title = ?", (title.title(),))
+            row = list(result)[0]
+            self.error_message.setText(f"username: {row[1]}\npassword: {row[2]}")
+            items = user_pass_app.table.findItems(title, Qt.MatchFlag.MatchFixedString)
+            for item in items:
+                print(item.text())
+                user_pass_app.table.item(item.row(), 1).setSelected(True)
+            cursor.close()
+            connection.close()
+        except:
+            self.error_message.setText(f"'{title}' item does not exist!")
 
 
 app = QApplication(sys.argv)
