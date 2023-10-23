@@ -1,8 +1,8 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, \
     QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, \
-    QDialog, QVBoxLayout, QTextEdit
-from PyQt6.QtGui import QAction
+    QDialog, QVBoxLayout, QTextEdit, QToolBar
+from PyQt6.QtGui import QAction, QIcon
 import sys
 import sqlite3
 
@@ -17,14 +17,14 @@ class MainWindow(QMainWindow):
         help_menu_item = self.menuBar().addMenu("&help")
         edit_menu_item = self.menuBar().addMenu("&edit")
 
-        add_userpass_action = QAction("Add a new user-pass", self)
+        add_userpass_action = QAction(QIcon("icons/add.png"), "Add a new user-pass", self)
         add_userpass_action.triggered.connect(self.insert)
         file_menu_item.addAction(add_userpass_action)
 
         about_action = QAction("About", self)
         help_menu_item.addAction(about_action)
 
-        search_action = QAction("Search", self)
+        search_action = QAction(QIcon("icons/search.png"), "Search", self)
         search_action.triggered.connect(self.search)
         edit_menu_item.addAction(search_action)
 
@@ -33,6 +33,12 @@ class MainWindow(QMainWindow):
         self.table.setHorizontalHeaderLabels(("Title", "Username", "Password", "Info"))
         # self.table.verticalHeader().setVisible(False)
         self.setCentralWidget(self.table)
+
+        toolbar = QToolBar()
+        toolbar.setMovable(True)
+        self.addToolBar(toolbar)
+        toolbar.addAction(add_userpass_action)
+        toolbar.addAction(search_action)
 
     def load_data(self):
         connection = sqlite3.connect("database.db")
