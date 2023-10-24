@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, \
     QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, \
     QDialog, QVBoxLayout, QTextEdit, QToolBar, QStatusBar, QMessageBox
 from PyQt6.QtGui import QAction, QIcon
+import qdarktheme
 import sys
 import sqlite3
 
@@ -20,11 +21,11 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("User - Pass App")
-        self.setMinimumSize(500, 400)
+        self.setMinimumSize(625, 500)
 
-        file_menu_item = self.menuBar().addMenu("&file")
-        edit_menu_item = self.menuBar().addMenu("&edit")
-        help_menu_item = self.menuBar().addMenu("&help")
+        file_menu_item = self.menuBar().addMenu("&File")
+        edit_menu_item = self.menuBar().addMenu("&Edit")
+        help_menu_item = self.menuBar().addMenu("&Help")
 
         add_userpass_action = QAction(QIcon("icons/add.png"), "Add a new user-pass", self)
         add_userpass_action.triggered.connect(self.insert)
@@ -40,6 +41,10 @@ class MainWindow(QMainWindow):
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
+        self.table.setColumnWidth(0, 120)
+        self.table.setColumnWidth(1, 160)
+        self.table.setColumnWidth(2, 140)
+        self.table.setColumnWidth(3, 180)
         self.table.setHorizontalHeaderLabels(("Title", "Username", "Password", "Info"))
         # self.table.verticalHeader().setVisible(False)
         self.setCentralWidget(self.table)
@@ -163,8 +168,6 @@ class SearchDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Search items")
-        self.setFixedWidth(210)
-        self.setFixedHeight(110)
 
         layout = QVBoxLayout()
 
@@ -291,7 +294,9 @@ class DeleteDialog(QDialog):
         confirmation_widget.exec()
 
 
+qdarktheme.enable_hi_dpi()
 app = QApplication(sys.argv)
+qdarktheme.setup_theme("light", custom_colors={"primary": "#2052a8"})
 main_window = MainWindow()
 main_window.show()
 main_window.load_data()
