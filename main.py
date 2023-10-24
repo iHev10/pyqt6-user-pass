@@ -7,6 +7,15 @@ import sys
 import sqlite3
 
 
+class DatabaseConnection:
+    def __init__(self, database_file="database.db"):
+        self.database_file = database_file
+
+    def connect(self):
+        connection = sqlite3.connect(self.database_file)
+        return connection
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -14,19 +23,20 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(500, 400)
 
         file_menu_item = self.menuBar().addMenu("&file")
-        help_menu_item = self.menuBar().addMenu("&help")
         edit_menu_item = self.menuBar().addMenu("&edit")
+        help_menu_item = self.menuBar().addMenu("&help")
 
         add_userpass_action = QAction(QIcon("icons/add.png"), "Add a new user-pass", self)
         add_userpass_action.triggered.connect(self.insert)
         file_menu_item.addAction(add_userpass_action)
 
-        about_action = QAction("About", self)
-        help_menu_item.addAction(about_action)
-
         search_action = QAction(QIcon("icons/search.png"), "Search", self)
         search_action.triggered.connect(self.search)
         edit_menu_item.addAction(search_action)
+
+        about_action = QAction("About", self)
+        about_action.triggered.connect(self.about)
+        help_menu_item.addAction(about_action)
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
@@ -46,7 +56,7 @@ class MainWindow(QMainWindow):
         self.table.cellClicked.connect(self.cell_click)
 
     def load_data(self):
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         result = connection.execute("SELECT * FROM userpass")
         self.table.setRowCount(0)
         for row_number, row_data in enumerate(result):
@@ -85,6 +95,22 @@ class MainWindow(QMainWindow):
         delete = DeleteDialog()
         delete.exec()
 
+    def about(self):
+        dialog = AboutDialog()
+        dialog.exec()
+
+
+class AboutDialog(QMessageBox):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("About")
+
+        content = """This app records usernames and passwords
+_______________________________________
+Created by HEV10
+"""
+        self.setText(content)
+
 
 class InsertDialog(QDialog):
     def __init__(self):
@@ -122,7 +148,7 @@ class InsertDialog(QDialog):
         user = self.username.text()
         password = self.password.text()
         extra_info = self.extra_info.toPlainText()
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute("INSERT INTO userpass (Title, Username, Password, Info) VALUES (?, ?, ?, ?)",
                        (title.title(), user, password, extra_info))
@@ -158,7 +184,7 @@ class SearchDialog(QDialog):
     def search(self):
         try:
             title = self.title.text()
-            connection = sqlite3.connect("database.db")
+            connection = DatabaseConnection().connect()
             cursor = connection.cursor()
             result = cursor.execute("SELECT * FROM userpass WHERE Title = ?", (title.title(),))
             row = list(result)[0]
@@ -211,7 +237,7 @@ class EditDialog(QDialog):
         self.setLayout(layout)
 
     def update_userpass(self):
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute("UPDATE userpass SET Username = ?, Password = ?, Info = ? WHERE Title = ?",
                        (
@@ -248,7 +274,7 @@ class DeleteDialog(QDialog):
         index = main_window.table.currentRow()
         title = main_window.table.item(index, 0)
 
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute("DELETE FROM userpass WHERE Title = ?", (title.text(),))
 
