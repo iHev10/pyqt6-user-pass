@@ -129,7 +129,7 @@ class InsertDialog(QDialog):
         connection.commit()
         cursor.close()
         connection.close()
-        user_pass_app.load_data()
+        main_window.load_data()
         print(title, user, password, extra_info)
 
 
@@ -163,10 +163,10 @@ class SearchDialog(QDialog):
             result = cursor.execute("SELECT * FROM userpass WHERE Title = ?", (title.title(),))
             row = list(result)[0]
             self.error_message.setText(f"username: {row[1]}\npassword: {row[2]}")
-            items = user_pass_app.table.findItems(title, Qt.MatchFlag.MatchFixedString)
+            items = main_window.table.findItems(title, Qt.MatchFlag.MatchFixedString)
             for item in items:
                 print(item.text())
-                user_pass_app.table.item(item.row(), 1).setSelected(True)
+                main_window.table.item(item.row(), 1).setSelected(True)
             cursor.close()
             connection.close()
         except:
@@ -174,7 +174,55 @@ class SearchDialog(QDialog):
 
 
 class EditDialog(QDialog):
-    pass
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Update user-pass")
+        self.setFixedWidth(300)
+        self.setFixedHeight(300)
+
+        layout = QVBoxLayout()
+
+        index = main_window.table.currentRow()
+
+        title = main_window.table.item(index, 0)
+        self.title = QLineEdit(title.text())
+        self.title.setPlaceholderText("Title")
+        layout.addWidget(self.title)
+
+        username = main_window.table.item(index, 1)
+        self.username = QLineEdit(username.text())
+        self.username.setPlaceholderText("Username")
+        layout.addWidget(self.username)
+
+        password = main_window.table.item(index, 2)
+        self.password = QLineEdit(password.text())
+        self.password.setPlaceholderText("Password")
+        layout.addWidget(self.password)
+
+        extra_info = main_window.table.item(index, 3)
+        self.extra_info = QTextEdit(extra_info.text())
+        self.extra_info.setPlaceholderText("Extra Information")
+        layout.addWidget(self.extra_info)
+
+        update_button = QPushButton("Update")
+        update_button.clicked.connect(self.update_userpass)
+        layout.addWidget(update_button)
+
+        self.setLayout(layout)
+
+    def update_userpass(self):
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        cursor.execute("UPDATE userpass SET Username = ?, Password = ?, Info = ? WHERE Title = ?",
+                       (
+                        self.username.text(),
+                        self.password.text(),
+                        self.extra_info.toPlainText(),
+                        self.title.text()))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        main_window.load_data()
 
 
 class DeleteDialog(QDialog):
@@ -182,7 +230,7 @@ class DeleteDialog(QDialog):
 
 
 app = QApplication(sys.argv)
-user_pass_app = MainWindow()
-user_pass_app.show()
-user_pass_app.load_data()
+main_window = MainWindow()
+main_window.show()
+main_window.load_data()
 sys.exit(app.exec())
