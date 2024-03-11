@@ -1,20 +1,28 @@
+from database.database import DatabaseConnection
+from about import AboutDialog
+
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGridLayout, \
-    QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, \
-    QDialog, QVBoxLayout, QTextEdit, QToolBar, QStatusBar, QMessageBox
+from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtWidgets import (
+    QMainWindow,
+    QPushButton,
+    QTableWidget,
+    QToolBar,
+    QStatusBar,
+    QTableWidgetItem,
+    QMessageBox,
+    QDialog,
+    QVBoxLayout,
+    QLineEdit,
+    QTextEdit,
+    QGridLayout,
+    QLabel,
+)
+
 import qdarktheme
+
 import sys
-import sqlite3
-
-
-class DatabaseConnection:
-    def __init__(self, database_file="database.db"):
-        self.database_file = database_file
-
-    def connect(self):
-        connection = sqlite3.connect(self.database_file)
-        return connection
 
 
 class MainWindow(QMainWindow):
@@ -27,7 +35,8 @@ class MainWindow(QMainWindow):
         edit_menu_item = self.menuBar().addMenu("&Edit")
         help_menu_item = self.menuBar().addMenu("&Help")
 
-        add_userpass_action = QAction(QIcon("icons/add.png"), "Add a new user-pass", self)
+        add_userpass_action = QAction(
+            QIcon("icons/add.png"), "Add a new user-pass", self)
         add_userpass_action.triggered.connect(self.insert)
         file_menu_item.addAction(add_userpass_action)
 
@@ -45,7 +54,8 @@ class MainWindow(QMainWindow):
         self.table.setColumnWidth(1, 160)
         self.table.setColumnWidth(2, 140)
         self.table.setColumnWidth(3, 180)
-        self.table.setHorizontalHeaderLabels(("Title", "Username", "Password", "Info"))
+        self.table.setHorizontalHeaderLabels(
+            ("Title", "Username", "Password", "Info"))
         # self.table.verticalHeader().setVisible(False)
         self.setCentralWidget(self.table)
 
@@ -67,7 +77,8 @@ class MainWindow(QMainWindow):
         for row_number, row_data in enumerate(result):
             self.table.insertRow(row_number)
             for column_number, data in enumerate(row_data):
-                self.table.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+                self.table.setItem(row_number, column_number,
+                                   QTableWidgetItem(str(data)))
         connection.close()
 
     def insert(self):
@@ -103,18 +114,6 @@ class MainWindow(QMainWindow):
     def about(self):
         dialog = AboutDialog()
         dialog.exec()
-
-
-class AboutDialog(QMessageBox):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("About")
-
-        content = """This app records usernames and passwords
-_______________________________________
-Created by HEV10
-"""
-        self.setText(content)
 
 
 class InsertDialog(QDialog):
@@ -161,7 +160,13 @@ class InsertDialog(QDialog):
         cursor.close()
         connection.close()
         main_window.load_data()
+        self.close()
         print(title, user, password, extra_info)
+
+        confirmation_widget = QMessageBox()
+        confirmation_widget.setWindowTitle("Success")
+        confirmation_widget.setText("The record was added successfully!")
+        confirmation_widget.exec()
 
 
 class SearchDialog(QDialog):
@@ -189,10 +194,16 @@ class SearchDialog(QDialog):
             title = self.title.text()
             connection = DatabaseConnection().connect()
             cursor = connection.cursor()
-            result = cursor.execute("SELECT * FROM userpass WHERE Title = ?", (title.title(),))
-            row = list(result)[0]
-            self.error_message.setText(f"username: {row[1]}\npassword: {row[2]}")
-            items = main_window.table.findItems(title, Qt.MatchFlag.MatchFixedString)
+            result = cursor.execute(
+                "SELECT * FROM userpass WHERE Title LIKE ?", ("%" + title.title() + "%",))
+
+            txt = ""
+            for row in list(result):
+                txt += f"\nusername: {row[1]}\npassword: {row[2]}\n"
+                txt += "--------------------"
+            self.error_message.setText(txt)
+            items = main_window.table.findItems(
+                title, Qt.MatchFlag.MatchFixedString)
             for item in items:
                 print(item.text())
                 main_window.table.item(item.row(), 1).setSelected(True)
@@ -294,10 +305,11 @@ class DeleteDialog(QDialog):
         confirmation_widget.exec()
 
 
-qdarktheme.enable_hi_dpi()
-app = QApplication(sys.argv)
-qdarktheme.setup_theme("light", custom_colors={"primary": "#2052a8"})
-main_window = MainWindow()
-main_window.show()
-main_window.load_data()
-sys.exit(app.exec())
+if __name__ == "__main__":
+    qdarktheme.enable_hi_dpi()
+    app = QApplication(sys.argv)
+    qdarktheme.setup_theme("light", custom_colors={"primary": "#2052a8"})
+    main_window = MainWindow()
+    main_window.show()
+    main_window.load_data()
+    sys.exit(app.exec())
